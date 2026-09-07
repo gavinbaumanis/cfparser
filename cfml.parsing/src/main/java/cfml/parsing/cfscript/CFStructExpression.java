@@ -16,25 +16,15 @@ public class CFStructExpression extends CFExpression {
 	
 	private boolean ordered;
 	
-	/**
-	 * The marker inside an empty ordered struct, <code>:</code> or <code>=</code>. Null for every
-	 * other struct. Without it an empty ordered struct writes back as <code>[]</code>, which is an
-	 * empty array rather than an empty struct.
-	 */
-	private String emptyMarker;
-	
 	public CFStructExpression(Token t) {
-		this(t, false, null);
+		super(t);
+		this.ordered = false;
+		elements = new ArrayList<CFExpression>();
 	}
 	
 	public CFStructExpression(Token t, boolean ordered) {
-		this(t, ordered, null);
-	}
-	
-	public CFStructExpression(Token t, boolean ordered, String emptyMarker) {
 		super(t);
 		this.ordered = ordered;
-		this.emptyMarker = emptyMarker;
 		elements = new ArrayList<CFExpression>();
 	}
 	
@@ -49,9 +39,6 @@ public class CFStructExpression extends CFExpression {
 	public String Decompile(int indent) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(ordered ? '[' : '{');
-		if (elements.isEmpty() && emptyMarker != null) {
-			sb.append(emptyMarker);
-		}
 		for (int i = 0; i < elements.size(); i++) {
 			sb.append(((CFStructElementExpression) elements.get(i)).toString());
 			sb.append(',');
@@ -81,10 +68,5 @@ public class CFStructExpression extends CFExpression {
 	
 	public boolean isOrdered() {
 		return ordered;
-	}
-	
-	/** The empty ordered struct's marker, ":" or "=", or null when there is none. */
-	public String getEmptyMarker() {
-		return emptyMarker;
 	}
 }

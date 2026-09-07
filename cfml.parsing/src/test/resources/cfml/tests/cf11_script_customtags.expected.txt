@@ -24,9 +24,9 @@ Hidden:NEWLINE                  <>
         (tagFunctionStatement
           (cfmlFunction Cf_happybirthday)
           (
-          (argumentList
-            (argument
-              (argumentName (identifier name))
+          (parameterList
+            (parameter
+              (identifier name)
               =
               (startExpression
                 (baseExpression
@@ -39,8 +39,8 @@ Hidden:NEWLINE                  <>
               )
             )
             ,
-            (argument
-              (argumentName (identifier birthdate))
+            (parameter
+              (identifier birthdate)
               =
               (startExpression
                 (baseExpression

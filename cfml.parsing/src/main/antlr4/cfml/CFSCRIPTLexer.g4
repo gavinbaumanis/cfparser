@@ -114,10 +114,6 @@ PAGE_ENCODING: [pP][aA][gG][eE][eE][nN][cC][oO][dD][iI][nN][gG];
 CONTAINS:	[cC][oO][nN][tT][aA][iI][nN][sS];
 CONTAIN: [cC][oO][nN][tT][aA][iI][nN];
 DOESNOTCONTAIN: [dD][oO][eE][sS][ ]+[nN][oO][tT][ ]+[cC][oO][nN][tT][aA][iI][nN];
-INSTANCEOF: [iI][nN][sS][tT][aA][nN][cC][eE][oO][fF];
-// Railo/Lucee abbreviations for contains and does not contain.
-CT: [cC][tT];
-NCT: [nN][cC][tT];
 IS:	[iI][sS] -> type(EQ);
 IS_NOT:	[iI][sS][ ]+[nN][oO][tT] -> type(NEQ);
 GT: [gG][tT];
@@ -168,9 +164,6 @@ FINAL: [fF][iI][nN][aA][lL];
 ABSTRACT: [aA][Bb][sS][tT][Rr][aA][cC][tT];
 STATIC: [sS][tT][aA][tT][iI][cC];
 SCRIPTOPEN: '<' [cC] [fF] [sS] [cC] [rR] [iI] [pP] [tT] '>';
-// Lucee's template block: ``` drops out of cfscript into template markup, the mirror of
-// <cfscript> dropping the other way. The body interpolates #...# like a string does.
-OPEN_TEMPLATE: '```' -> pushMode(InTemplate);
 SCRIPTCLOSE:'</' [cC] [fF] [sS] [cC] [rR] [iI] [pP] [tT] '>';
 // operators
 DOT: '.';
@@ -187,9 +180,6 @@ CONCAT: '&';
 EQUALSEQUALSOP: '==' -> type(EQ);
 EQUALSEQUALSEQUALSOP: '===' -> type(EQ);
 LAMBDAOP: '=>';
-// Lucee's second arrow. Syntactically the same declaration; the engines differ at
-// runtime, where => captures scope as a closure and -> does not.
-THINARROW: '->';
 EQUALSOP: '=';
 PLUSEQUALS: '+=';
 MINUSEQUALS: '-=';
@@ -259,8 +249,7 @@ INTERFACE: [iI][nN][tT][eE][rR][fF][aA][cC][eE];
 LOG: [lL][oO][gG];
 //TEXT: [tT][eE][xX][tT];
 //TYPE: [tT][yY][pP][eE];
-APPLICATION: [aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN];
-CFAPPLICATION: [cC][fF] APPLICATION -> type(APPLICATION);
+//APPLICATION: [aA][pP][pP][lL][iI][cC][aA][tT][iI][oO][nN];
 
 APPLET: [Aa][Pp][Pp][Ll][Ee][Tt];
 ASSOCIATE: [Aa][Ss][Ss][Oo][Cc][Ii][Aa][Tt][Ee];
@@ -317,118 +306,6 @@ TREEITEM: [Tt][Rr][Ee][Ee][Ii][Tt][Ee][Mm];
 UPDATE: [Uu][Pp][Dd][Aa][Tt][Ee];
 WDDX: [Ww][Dd][Dd][Xx];
 ZIP: [Zz][Ii][Pp];
-
-// The cf-prefixed spelling of every tag above. CFML accepts a script-syntax tag
-// either way -- cffile and file are the same tag -- so each maps onto the
-// unprefixed token and the parser needs no second list. CFLOOP above is the
-// pattern; CFHTTP and CFHTTPPARAM predate it and stayed distinct tokens.
-// cfscript and cfset are deliberately absent: <cfscript> is the script delimiter
-// itself and <cfset> is spelled as an assignment, so neither has a script-syntax
-// form to enable, and aliasing them would reserve the words for nothing.
-CFSAVECONTENT: [cC][fF] SAVECONTENT -> type(SAVECONTENT);
-CFFILE: [cC][fF] FILE -> type(FILE);
-CFPROPERTY: [cC][fF] PROPERTY -> type(PROPERTY);
-CFDIRECTORY: [cC][fF] DIRECTORY -> type(DIRECTORY);
-CFSETTING: [cC][fF] SETTING -> type(SETTING);
-CFQUERY: [cC][fF] QUERY -> type(QUERY);
-CFLOG: [cC][fF] LOG -> type(LOG);
-CFAPPLET: [cC][fF] APPLET -> type(APPLET);
-CFASSOCIATE: [cC][fF] ASSOCIATE -> type(ASSOCIATE);
-CFAUTHENTICATE: [cC][fF] AUTHENTICATE -> type(AUTHENTICATE);
-CFCACHE: [cC][fF] CACHE -> type(CACHE);
-CFCOL: [cC][fF] COL -> type(COL);
-CFCOLLECTION: [cC][fF] COLLECTION -> type(COLLECTION);
-CFCONTENT: [cC][fF] CONTENT -> type(CONTENT);
-CFCOOKIE: [cC][fF] COOKIE -> type(COOKIE);
-CFERROR: [cC][fF] ERROR -> type(ERROR);
-CFEXECUTE: [cC][fF] EXECUTE -> type(EXECUTE);
-CFFORM: [cC][fF] FORM -> type(FORM);
-CFFTP: [cC][fF] FTP -> type(FTP);
-CFGRID: [cC][fF] GRID -> type(GRID);
-CFGRIDCOLUMN: [cC][fF] GRIDCOLUMN -> type(GRIDCOLUMN);
-CFGRIDROW: [cC][fF] GRIDROW -> type(GRIDROW);
-CFGRIDUPDATE: [cC][fF] GRIDUPDATE -> type(GRIDUPDATE);
-CFHEADER: [cC][fF] HEADER -> type(HEADER);
-CFHTMLHEAD: [cC][fF] HTMLHEAD -> type(HTMLHEAD);
-CFIMPERSONATE: [cC][fF] IMPERSONATE -> type(IMPERSONATE);
-CFINDEX: [cC][fF] INDEX -> type(INDEX);
-CFINPUT: [cC][fF] INPUT -> type(INPUT);
-CFINSERT: [cC][fF] INSERT -> type(INSERT);
-CFLDAP: [cC][fF] LDAP -> type(LDAP);
-CFLOCATION: [cC][fF] LOCATION -> type(LOCATION);
-CFMAIL: [cC][fF] MAIL -> type(MAIL);
-CFMAILPARAM: [cC][fF] MAILPARAM -> type(MAILPARAM);
-CFMODULE: [cC][fF] MODULE -> type(MODULE);
-CFOBJECT: [cC][fF] OBJECT -> type(OBJECT);
-CFOUTPUT: [cC][fF] OUTPUT -> type(OUTPUT);
-CFPOP: [cC][fF] POP -> type(POP);
-CFPROCESSINGDIRECTIVE: [cC][fF] PROCESSINGDIRECTIVE -> type(PROCESSINGDIRECTIVE);
-CFPROCPARAM: [cC][fF] PROCPARAM -> type(PROCPARAM);
-CFPROCRESULT: [cC][fF] PROCRESULT -> type(PROCRESULT);
-CFQUERYPARAM: [cC][fF] QUERYPARAM -> type(QUERYPARAM);
-CFREGISTRY: [cC][fF] REGISTRY -> type(REGISTRY);
-CFREPORT: [cC][fF] REPORT -> type(REPORT);
-CFSCHEDULE: [cC][fF] SCHEDULE -> type(SCHEDULE);
-CFSEARCH: [cC][fF] SEARCH -> type(SEARCH);
-CFSELECT: [cC][fF] SELECT -> type(SELECT);
-CFSERVLET: [cC][fF] SERVLET -> type(SERVLET);
-CFSERVLETPARAM: [cC][fF] SERVLETPARAM -> type(SERVLETPARAM);
-CFSILENT: [cC][fF] SILENT -> type(SILENT);
-CFSLIDER: [cC][fF] SLIDER -> type(SLIDER);
-CFSTOREDPROC: [cC][fF] STOREDPROC -> type(STOREDPROC);
-CFTABLE: [cC][fF] TABLE -> type(TABLE);
-CFTEXTINPUT: [cC][fF] TEXTINPUT -> type(TEXTINPUT);
-CFTREE: [cC][fF] TREE -> type(TREE);
-CFTREEITEM: [cC][fF] TREEITEM -> type(TREEITEM);
-CFUPDATE: [cC][fF] UPDATE -> type(UPDATE);
-CFWDDX: [cC][fF] WDDX -> type(WDDX);
-CFZIP: [cC][fF] ZIP -> type(ZIP);
-
-// Tags that exist only in their cf-prefixed spelling here. The bare names -- dump, trace,
-// map, xml, flush -- are ordinary function and variable names in real code (dump( ) alone
-// appears in four fixtures), so minting bare tokens for them would reclassify working code.
-// The cf-prefixed form carries no such risk, and each is listed in identifier as well.
-CFCALENDAR: [cC][fF][cC][aA][lL][eE][nN][dD][aA][rR];
-CFCHART: [cC][fF][cC][hH][aA][rR][tT];
-CFCHARTDATA: [cC][fF][cC][hH][aA][rR][tT][dD][aA][tT][aA];
-CFCHARTSERIES: [cC][fF][cC][hH][aA][rR][tT][sS][eE][rR][iI][eE][sS];
-CFCLIENT: [cC][fF][cC][lL][iI][eE][nN][tT];
-CFCLIENTSETTINGS: [cC][fF][cC][lL][iI][eE][nN][tT][sS][eE][tT][tT][iI][nN][gG][sS];
-CFDOCUMENT: [cC][fF][dD][oO][cC][uU][mM][eE][nN][tT];
-CFDOCUMENTITEM: [cC][fF][dD][oO][cC][uU][mM][eE][nN][tT][iI][tT][eE][mM];
-CFDOCUMENTSECTION: [cC][fF][dD][oO][cC][uU][mM][eE][nN][tT][sS][eE][cC][tT][iI][oO][nN];
-CFDUMP: [cC][fF][dD][uU][mM][pP];
-CFFILEUPLOAD: [cC][fF][fF][iI][lL][eE][uU][pP][lL][oO][aA][dD];
-CFFLUSH: [cC][fF][fF][lL][uU][sS][hH];
-CFFORMGROUP: [cC][fF][fF][oO][rR][mM][gG][rR][oO][uU][pP];
-CFFORMITEM: [cC][fF][fF][oO][rR][mM][iI][tT][eE][mM];
-CFHTMLTOPDF: [cC][fF][hH][tT][mM][lL][tT][oO][pP][dD][fF];
-CFHTMLTOPDFITEM: [cC][fF][hH][tT][mM][lL][tT][oO][pP][dD][fF][iI][tT][eE][mM];
-CFINVOKE: [cC][fF][iI][nN][vV][oO][kK][eE];
-CFINVOKEARGUMENT: [cC][fF][iI][nN][vV][oO][kK][eE][aA][rR][gG][uU][mM][eE][nN][tT];
-CFLOGIN: [cC][fF][lL][oO][gG][iI][nN];
-CFLOGINUSER: [cC][fF][lL][oO][gG][iI][nN][uU][sS][eE][rR];
-CFLOGOUT: [cC][fF][lL][oO][gG][oO][uU][tT];
-CFMAILPART: [cC][fF][mM][aA][iI][lL][pP][aA][rR][tT];
-CFMAP: [cC][fF][mM][aA][pP];
-CFMAPITEM: [cC][fF][mM][aA][pP][iI][tT][eE][mM];
-CFMEDIAPLAYER: [cC][fF][mM][eE][dD][iI][aA][pP][lL][aA][yY][eE][rR];
-CFMESSAGEBOX: [cC][fF][mM][eE][sS][sS][aA][gG][eE][bB][oO][xX];
-CFNTAUTHENTICATE: [cC][fF][nN][tT][aA][uU][tT][hH][eE][nN][tT][iI][cC][aA][tT][eE];
-CFOAUTH: [cC][fF][oO][aA][uU][tT][hH];
-CFOBJECTCACHE: [cC][fF][oO][bB][jJ][eE][cC][tT][cC][aA][cC][hH][eE];
-CFPROGRESSBAR: [cC][fF][pP][rR][oO][gG][rR][eE][sS][sS][bB][aA][rR];
-CFREPORTPARAM: [cC][fF][rR][eE][pP][oO][rR][tT][pP][aA][rR][aA][mM];
-CFSHAREPOINT: [cC][fF][sS][hH][aA][rR][eE][pP][oO][iI][nN][tT];
-CFSPREADSHEET: [cC][fF][sS][pP][rR][eE][aA][dD][sS][hH][eE][eE][tT];
-CFTEXTAREA: [cC][fF][tT][eE][xX][tT][aA][rR][eE][aA];
-CFTIMER: [cC][fF][tT][iI][mM][eE][rR];
-CFTRACE: [cC][fF][tT][rR][aA][cC][eE];
-CFWEBSOCKET: [cC][fF][wW][eE][bB][sS][oO][cC][kK][eE][tT];
-CFXML: [cC][fF][xX][mM][lL];
-// imap is the one bare spelling the corpora actually use, so it gets both.
-IMAP: [iI][mM][aA][pP];
-CFIMAP: [cC][fF] IMAP -> type(IMAP);
 
 CFCUSTOM_IDENTIFIER: [cC][fF]'_' IDENTIFIER+;
 
@@ -505,17 +382,4 @@ HASH_SINGLE
 
 mode HashMode;
 HashMode_ANY:  -> popMode,skip;
-
-mode InTemplate;
-CLOSE_TEMPLATE
-	: '```' -> popMode
-;
-TEMPLATE_DOUBLEHASH
-	: '##' -> type(DOUBLEHASH)
-;
-TEMPLATE_LITERAL
-	: (~[`#]+ | '`' ~[`] | '``' ~[`])+
-;
-TEMPLATE_HASH
-	: '#' -> type(POUND_SIGN),pushMode(HashMode),pushMode(DefaultMode)
-;
+ 

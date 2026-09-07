@@ -1,10 +1,10 @@
 plugins {
-	id "com.github.hierynomus.license" version "0.16.1"
-	id "biz.aQute.bnd.builder" version "7.0.0" apply(false)
+	id "com.github.hierynomus.license" version "0.15.0"
+	id "com.diffplug.gradle.osgi.bndmanifest" version "3.18.1"
 	id 'net.researchgate.release' version '3.0.2' apply(false)
 }
 
-version = '2.16.1-SNAPSHOT'
+version = '11.0.0'
 
 license {
 	header rootProject.file('LICENSE')
@@ -91,26 +91,9 @@ publishing {
 
 subprojects {
 	apply plugin: 'java'
-	apply plugin: 'biz.aQute.bnd.builder'
+	apply plugin: 'com.diffplug.gradle.osgi.bndmanifest'
 	apply plugin: 'signing'
-	apply plugin: 'jacoco'
 
-	jacoco {
-		toolVersion = '0.8.12'
-	}
-
-	// `gradle build` runs test, so coverage reports come along with the normal CI build.
-	test {
-		finalizedBy jacocoTestReport
-	}
-
-	jacocoTestReport {
-		dependsOn test
-		reports {
-			xml.required = true
-			html.required = true
-		}
-	}
 
 	javadoc {
 		options.addBooleanOption( "Xdoclint:none", true )
@@ -123,18 +106,17 @@ subprojects {
 	}
 
 
-	tasks.named('jar') {
-		bundle {
-			bnd(
-				'-removeheaders': 'Bnd-LastModified,Bundle-Name,Created-By,Tool,Private-Package',
-				'Bundle-SymbolicName': project.name,
-				'Bundle-Vendor': 'cfmleditor'
-			)
-		}
+	jar.manifest.attributes(
+		'-removeheaders': 'Bnd-LastModified,Bundle-Name,Created-By,Tool,Private-Package',
+		'Bundle-SymbolicName': project.name,
+		'Bundle-Vendor': 'cfmleditor',
+	)
+	osgiBndManifest {
+		copyTo 'META-INF/MANIFEST.MF'
 	}
 
-	sourceCompatibility = 21
-	targetCompatibility = 21
+	sourceCompatibility = 11
+	targetCompatibility = 11
 	tasks.withType(JavaCompile) { options.encoding = 'UTF-8' }
 
 	task sourcesJar(type: Jar) {

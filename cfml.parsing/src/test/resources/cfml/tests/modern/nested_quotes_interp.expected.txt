@@ -1,0 +1,127 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Nested single quotes inside #...# interpolation in a single-quoted string>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+IDENTIFIER               <date>
+IDENTIFIER               <ts>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+OPEN_STRING              <'>
+'#'                      <#>
+IDENTIFIER               <DateFormat>
+'('                      <(>
+IDENTIFIER               <ts>
+','                      <,>
+OPEN_STRING              <'>
+STRING_LITERAL           <YYYYMMDD>
+CLOSE_STRING             <'>
+')'                      <)>
+'#'                      <#>
+CLOSE_STRING             <'>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          (parameterList
+            (parameter
+              (parameterType (typeSpec (multipartIdentifier (identifier date))))
+              (identifier ts)
+            )
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (unaryExpression
+                        (primaryExpression
+                          (literalExpression
+                            (stringLiteral
+                              '
+                              #
+                              (anExpression
+                                (startExpression
+                                  (baseExpression
+                                    (unaryExpression
+                                      (memberExpression
+                                        (functionCall
+                                          (identifier DateFormat)
+                                          (
+                                          (argumentList
+                                            (argument
+                                              (startExpression
+                                                (baseExpression (unaryExpression (memberExpression (identifier ts))))
+                                              )
+                                            )
+                                            ,
+                                            (argument
+                                              (startExpression
+                                                (baseExpression
+                                                  (unaryExpression
+                                                    (primaryExpression
+                                                      (literalExpression (stringLiteral ' (stringLiteralPart YYYYMMDD) '))
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              #
+                              '
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test(ts)     {
+      return '#DateFormat(ts, 'YYYYMMDD')#';
+
+    }
+}
+/*======*/

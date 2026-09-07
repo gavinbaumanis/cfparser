@@ -30,7 +30,11 @@ public class CFFunctionExpression extends CFMember {
 		}
 		args = _args;
 		if (args != null) {
-			args.forEach(elem -> elem.setParent(this));
+			args.forEach(elem -> {
+				if (elem != null) {
+					elem.setParent(this);
+				}
+			});
 		}
 		isUDF = false;
 	}
@@ -57,7 +61,10 @@ public class CFFunctionExpression extends CFMember {
 		s += "(";
 		
 		for (int i = 0; i < args.size(); i++) {
-			s += args.get(i).Decompile(indent);
+			CFExpression arg = args.get(i);
+			if (arg != null) {
+				s += arg.Decompile(indent);
+			}
 			if (i < args.size() - 1) {
 				s += ", ";
 			}
@@ -98,6 +105,9 @@ public class CFFunctionExpression extends CFMember {
 	public List<CFExpression> decomposeExpression() {
 		ArrayList<CFExpression> retval = new ArrayList<CFExpression>();
 		for (final CFExpression expr : getArgs()) {
+			if (expr == null) {
+				continue;
+			}
 			if (expr instanceof CFTernaryExpression) {
 				retval.add(expr);
 			} else if (expr instanceof CFAssignmentExpression) {

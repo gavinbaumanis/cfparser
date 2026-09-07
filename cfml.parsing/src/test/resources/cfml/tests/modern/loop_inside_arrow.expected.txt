@@ -1,0 +1,310 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Tag-in-script loop collection ... { } inside an arrow (iposhighscore)>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+QUERY                    <query>
+IDENTIFIER               <rptdata>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <rptdata>
+'.'                      <.>
+IDENTIFIER               <Filter>
+'('                      <(>
+'('                      <(>
+IDENTIFIER               <row>
+')'                      <)>
+'=>'                     <=>>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+VAR                      <var>
+IDENTIFIER               <score>
+'='                      <=>
+'{'                      <{>
+IDENTIFIER               <subscores>
+'='                      <=>
+'{'                      <{>
+'}'                      <}>
+'}'                      <}>
+';'                      <;>
+Hidden:NEWLINE                  <>
+LOOP                     <loop>
+Hidden:NEWLINE                  <>
+COLLECTION               <collection>
+'='                      <=>
+IDENTIFIER               <score>
+'.'                      <.>
+IDENTIFIER               <subscores>
+Hidden:NEWLINE                  <>
+INDEX                    <index>
+'='                      <=>
+OPEN_STRING              <">
+STRING_LITERAL           <k>
+CLOSE_STRING             <">
+Hidden:NEWLINE                  <>
+IDENTIFIER               <item>
+'='                      <=>
+OPEN_STRING              <">
+STRING_LITERAL           <value>
+CLOSE_STRING             <">
+'{'                      <{>
+Hidden:NEWLINE                  <>
+IF                       <if>
+'('                      <(>
+IDENTIFIER               <value>
+'.'                      <.>
+IDENTIFIER               <score>
+GT                       <>>
+INTEGER_LITERAL          <2>
+'&&'                     <&&>
+IDENTIFIER               <value>
+'.'                      <.>
+IDENTIFIER               <completed>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+BOOLEAN_LITERAL          <true>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+BOOLEAN_LITERAL          <false>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+')'                      <)>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          (parameterList
+            (parameter
+              (parameterType
+                (typeSpec (multipartIdentifier (identifier (cfmlFunction query))))
+              )
+              (identifier rptdata)
+            )
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (unaryExpression
+                        (memberExpression
+                          (identifier rptdata)
+                          .
+                          (qualifiedFunctionCall
+                            (identifier Filter)
+                            (
+                            (argumentList
+                              (argument
+                                (lambdaDeclaration
+                                  (
+                                  (parameterList (parameter (identifier row)))
+                                  )
+                                  =>
+                                  (compoundStatement
+                                    {
+                                    (statement
+                                      (localAssignmentExpression
+                                        var
+                                        (startExpression
+                                          (baseExpression (unaryExpression (memberExpression (identifier score))))
+                                        )
+                                        =
+                                        (startExpression
+                                          (baseExpression
+                                            (unaryExpression
+                                              (primaryExpression
+                                                (implicitStruct
+                                                  {
+                                                  (implicitStructElements
+                                                    (implicitStructExpression
+                                                      (implicitStructKeyExpression (multipartIdentifier (identifier subscores)))
+                                                      =
+                                                      (baseExpression (unaryExpression (primaryExpression (implicitStruct { }))))
+                                                    )
+                                                  )
+                                                  }
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                      (endOfStatement ;)
+                                    )
+                                    (statement
+                                      (tagOperatorStatement
+                                        (cfmlfunctionStatement
+                                          (cfmlFunction loop)
+                                          (paramStatementAttributes
+                                            (param
+                                              (multipartIdentifier (identifier (cfmlFunction collection)))
+                                              =
+                                              (startExpression
+                                                (baseExpression
+                                                  (unaryExpression
+                                                    (memberExpression (identifier score) . (identifier subscores))
+                                                  )
+                                                )
+                                              )
+                                            )
+                                            (param
+                                              (multipartIdentifier (identifier (cfmlFunction index)))
+                                              =
+                                              (startExpression
+                                                (baseExpression
+                                                  (unaryExpression
+                                                    (primaryExpression
+                                                      (literalExpression (stringLiteral " (stringLiteralPart k) "))
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                            (param
+                                              (multipartIdentifier (identifier item))
+                                              =
+                                              (startExpression
+                                                (baseExpression
+                                                  (unaryExpression
+                                                    (primaryExpression
+                                                      (literalExpression (stringLiteral " (stringLiteralPart value) "))
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                          (compoundStatement
+                                            {
+                                            (statement
+                                              (ifStatement
+                                                if
+                                                (condition
+                                                  (
+                                                  (baseExpression
+                                                    (baseExpression
+                                                      (baseExpression
+                                                        (unaryExpression (memberExpression (identifier value) . (identifier score)))
+                                                      )
+                                                      (compareExpressionOperator >)
+                                                      (baseExpression (unaryExpression (primaryExpression (literalExpression 2))))
+                                                    )
+                                                    &&
+                                                    (baseExpression
+                                                      (unaryExpression
+                                                        (memberExpression (identifier value) . (identifier completed))
+                                                      )
+                                                    )
+                                                  )
+                                                  )
+                                                )
+                                                (statement
+                                                  (compoundStatement
+                                                    {
+                                                    (statement
+                                                      (returnStatement
+                                                        return
+                                                        (anExpression
+                                                          (startExpression
+                                                            (baseExpression (unaryExpression (primaryExpression (literalExpression true))))
+                                                          )
+                                                        )
+                                                      )
+                                                      (endOfStatement ;)
+                                                    )
+                                                    }
+                                                  )
+                                                )
+                                              )
+                                            )
+                                            }
+                                          )
+                                        )
+                                      )
+                                    )
+                                    (statement
+                                      (returnStatement
+                                        return
+                                        (anExpression
+                                          (startExpression
+                                            (baseExpression
+                                              (unaryExpression (primaryExpression (literalExpression false)))
+                                            )
+                                          )
+                                        )
+                                      )
+                                      (endOfStatement ;)
+                                    )
+                                    }
+                                  )
+                                )
+                              )
+                            )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test(rptdata)     {
+      return rptdata.Filter((row) => {
+  var score = {subscores:{}};
+loop collection=score.subscores index='k' item='value'{
+  if(value.score > 2 && value.completed )     {
+      return true;
+
+    };
+
+};
+  return false;
+
+});
+
+    }
+}
+/*======*/

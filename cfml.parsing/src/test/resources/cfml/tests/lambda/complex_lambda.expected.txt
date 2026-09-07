@@ -189,17 +189,17 @@ INTEGER_LITERAL          <1>
 /*======*/
 /*===DECOMPILE===*/
 {
-isOdd = (n) =>   {
-    if(n % 2 == 0 )       {
-        return 'even';
+isOdd = (n) => {
+  if(n % 2 == 0 )     {
+      return 'even';
 
-      }
-    else       {
-        return 'odd';
+    }
+  else     {
+      return 'odd';
 
-      };
+    };
 
-  };
+};
 dump(isOdd(1));
 
 }

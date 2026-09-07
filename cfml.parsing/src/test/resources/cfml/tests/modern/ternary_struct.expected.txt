@@ -1,0 +1,161 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Ternary that yields a struct (waitlist shape)>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+ANY                      <any>
+IDENTIFIER               <x>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <isNull>
+'('                      <(>
+IDENTIFIER               <x>
+')'                      <)>
+'?'                      <?>
+OPEN_STRING              <'>
+CLOSE_STRING             <'>
+':'                      <:>
+'{'                      <{>
+IDENTIFIER               <value>
+'='                      <=>
+IDENTIFIER               <x>
+','                      <,>
+IDENTIFIER               <html>
+'='                      <=>
+OPEN_STRING              <'>
+STRING_LITERAL           <<b>>
+'#'                      <#>
+IDENTIFIER               <x>
+'#'                      <#>
+STRING_LITERAL           <</b>>
+CLOSE_STRING             <'>
+'}'                      <}>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          (parameterList
+            (parameter (parameterType (typeSpec (type any))) (identifier x))
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (baseExpression
+                        (unaryExpression
+                          (memberExpression
+                            (functionCall
+                              (identifier isNull)
+                              (
+                              (argumentList
+                                (argument
+                                  (startExpression
+                                    (baseExpression (unaryExpression (memberExpression (identifier x))))
+                                  )
+                                )
+                              )
+                              )
+                            )
+                          )
+                        )
+                      )
+                      (ternaryExpression
+                        ?
+                        (startExpression
+                          (baseExpression
+                            (unaryExpression (primaryExpression (literalExpression (stringLiteral ' '))))
+                          )
+                        )
+                        :
+                        (startExpression
+                          (baseExpression
+                            (unaryExpression
+                              (primaryExpression
+                                (implicitStruct
+                                  {
+                                  (implicitStructElements
+                                    (implicitStructExpression
+                                      (implicitStructKeyExpression (multipartIdentifier (identifier value)))
+                                      =
+                                      (baseExpression (unaryExpression (memberExpression (identifier x))))
+                                    )
+                                    ,
+                                    (implicitStructExpression
+                                      (implicitStructKeyExpression (multipartIdentifier (identifier html)))
+                                      =
+                                      (baseExpression
+                                        (unaryExpression
+                                          (primaryExpression
+                                            (literalExpression
+                                              (stringLiteral
+                                                '
+                                                (stringLiteralPart <b>)
+                                                #
+                                                (anExpression
+                                                  (startExpression
+                                                    (baseExpression (unaryExpression (memberExpression (identifier x))))
+                                                  )
+                                                )
+                                                #
+                                                (stringLiteralPart </b>)
+                                                '
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                  }
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test(x)     {
+      return isNull(x)?'':{value:x,html:'<b>#x#</b>'};
+
+    }
+}
+/*======*/

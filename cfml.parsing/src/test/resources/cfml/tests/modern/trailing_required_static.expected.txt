@@ -1,0 +1,212 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Trailing commas in decl + call args, required boolean, :: static call>
+FUNCTION                 <function>
+IDENTIFIER               <declOk>
+'('                      <(>
+REQUIRED                 <required>
+BOOLEAN                  <boolean>
+IDENTIFIER               <flag>
+','                      <,>
+REQUIRED                 <required>
+STRING                   <string>
+IDENTIFIER               <name>
+','                      <,>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+BOOLEAN_LITERAL          <true>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+FUNCTION                 <function>
+IDENTIFIER               <callTrailing>
+'('                      <(>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <declOk>
+'('                      <(>
+BOOLEAN_LITERAL          <true>
+','                      <,>
+OPEN_STRING              <'>
+STRING_LITERAL           <x>
+CLOSE_STRING             <'>
+','                      <,>
+')'                      <)>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+FUNCTION                 <function>
+IDENTIFIER               <staticCall>
+'('                      <(>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <CompName>
+'::'                     <::>
+IDENTIFIER               <runStatic>
+'('                      <(>
+')'                      <)>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier declOk)
+          (
+          (parameterList
+            (parameter
+              required
+              (parameterType (typeSpec (type boolean)))
+              (identifier flag)
+            )
+            ,
+            (parameter required (parameterType (typeSpec (type string))) (identifier name))
+            ,
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression (unaryExpression (primaryExpression (literalExpression true))))
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      (element
+        (functionDeclaration
+          function
+          (identifier callTrailing)
+          (
+          parameterList
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (unaryExpression
+                        (memberExpression
+                          (functionCall
+                            (identifier declOk)
+                            (
+                            (argumentList
+                              (argument
+                                (startExpression
+                                  (baseExpression (unaryExpression (primaryExpression (literalExpression true))))
+                                )
+                              )
+                              ,
+                              (argument
+                                (startExpression
+                                  (baseExpression
+                                    (unaryExpression
+                                      (primaryExpression
+                                        (literalExpression (stringLiteral ' (stringLiteralPart x) '))
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              ,
+                            )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      (element
+        (functionDeclaration
+          function
+          (identifier staticCall)
+          (
+          parameterList
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (unaryExpression
+                        (memberExpression
+                          (identifier CompName)
+                          ::
+                          (qualifiedFunctionCall (identifier runStatic) ( argumentList ))
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  {
+    public function callTrailing()       {
+        return declOk(true, 'x');
+
+      };
+    public function declOk(required flag, required name)       {
+        return true;
+
+      };
+    public function staticCall()       {
+        return CompName.runStatic();
+
+      };
+
+  }
+}
+/*======*/

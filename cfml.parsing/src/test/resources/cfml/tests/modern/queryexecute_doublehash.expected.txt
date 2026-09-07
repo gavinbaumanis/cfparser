@@ -1,0 +1,185 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// ## inside a double-quoted QueryExecute SQL string>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+REQUIRED                 <required>
+NUMERIC                  <numeric>
+IDENTIFIER               <id>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <QueryExecute>
+'('                      <(>
+OPEN_STRING              <">
+STRING_LITERAL           <SELECT mrn || COALESCE('>
+DOUBLEHASH               <##>
+STRING_LITERAL           <' || NULLIF(readmitcount, 1), '') AS mrn
+			FROM patientinfo
+			WHERE id = :id>
+CLOSE_STRING             <">
+','                      <,>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+OPEN_STRING              <'>
+STRING_LITERAL           <id>
+CLOSE_STRING             <'>
+'='                      <=>
+'{'                      <{>
+IDENTIFIER               <cfsqltype>
+'='                      <=>
+OPEN_STRING              <">
+STRING_LITERAL           <cf_sql_integer>
+CLOSE_STRING             <">
+','                      <,>
+IDENTIFIER               <value>
+'='                      <=>
+IDENTIFIER               <id>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+')'                      <)>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          (parameterList
+            (parameter required (parameterType (typeSpec (type numeric))) (identifier id))
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (unaryExpression
+                        (memberExpression
+                          (functionCall
+                            (identifier QueryExecute)
+                            (
+                            (argumentList
+                              (argument
+                                (startExpression
+                                  (baseExpression
+                                    (unaryExpression
+                                      (primaryExpression
+                                        (literalExpression
+                                          (stringLiteral
+                                            "
+                                            (stringLiteralPart \n\t\t\tSELECT mrn || COALESCE(')
+                                            (stringLiteralPart ##)
+                                            (stringLiteralPart
+                                              ' || NULLIF(readmitcount, 1), '') AS mrn\n\t\t\tFROM patientinfo\n\t\t\tWHERE id = :id\n\t\t
+                                            )
+                                            "
+                                          )
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                              ,
+                              (argument
+                                (startExpression
+                                  (baseExpression
+                                    (unaryExpression
+                                      (primaryExpression
+                                        (implicitStruct
+                                          {
+                                          (implicitStructElements
+                                            (implicitStructExpression
+                                              (implicitStructKeyExpression
+                                                (literalExpression (stringLiteral ' (stringLiteralPart id) '))
+                                              )
+                                              =
+                                              (baseExpression
+                                                (unaryExpression
+                                                  (primaryExpression
+                                                    (implicitStruct
+                                                      {
+                                                      (implicitStructElements
+                                                        (implicitStructExpression
+                                                          (implicitStructKeyExpression (multipartIdentifier (identifier cfsqltype)))
+                                                          =
+                                                          (baseExpression
+                                                            (unaryExpression
+                                                              (primaryExpression
+                                                                (literalExpression (stringLiteral " (stringLiteralPart cf_sql_integer) "))
+                                                              )
+                                                            )
+                                                          )
+                                                        )
+                                                        ,
+                                                        (implicitStructExpression
+                                                          (implicitStructKeyExpression (multipartIdentifier (identifier value)))
+                                                          =
+                                                          (baseExpression (unaryExpression (memberExpression (identifier id))))
+                                                        )
+                                                      )
+                                                      }
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                          }
+                                        )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test(required id)     {
+      return QueryExecute('
+			SELECT mrn || COALESCE('' || NULLIF(readmitcount, 1), '') AS mrn
+			FROM patientinfo
+			WHERE id = :id
+		', {'id':{cfsqltype:'cf_sql_integer',value:id}});
+
+    }
+}
+/*======*/

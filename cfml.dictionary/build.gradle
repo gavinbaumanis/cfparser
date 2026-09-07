@@ -5,8 +5,6 @@ dependencies {
 	testImplementation 'junit:junit:4.13.2'
 }
 
-tasks.named('jar') {
-	bundle {
-		bnd('-exportcontents': 'cfml.dictionary.*')
-	}
-}
+jar.manifest.attributes(
+	'-exportcontents': 'cfml.dictionary.*'
+)

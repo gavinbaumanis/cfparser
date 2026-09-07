@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import cfml.parsing.cfscript.CFAssignmentExpression;
@@ -66,69 +65,37 @@ public class TestCFMLParser {
 	}
 	
 	@Test
-	@Ignore
-	// NullPointerException
 	public void testGetTagAt() {
-		String path = "";
-		try {
-			path = new URL(sourceUrlFile).getPath();
-		} catch (MalformedURLException e) {
-			// Auto-generated catch block
-			e.printStackTrace();
-		}
-		// has to be the exact start pos of the tag
-		ParserTag parserTag = fCfmlParser.getCFMLSource(path).getTagAt(8);
-		System.out.println(fCfmlParser.printMessages());
-		assertEquals("cffunction", parserTag.getName());
+		String source = "<cfset a=1><cfquery name=\"q\">x</cfquery>";
+		CFMLSource cfmlSource = fCfmlParser.addCFMLSource("nav-inline.cfm", source);
+		ParserTag parserTag = cfmlSource.getTagAt(0);
+		assertEquals("cfset", parserTag.getName());
 	}
 	
 	@Test
-	@Ignore
-	// TODO: org.junit.ComparisonFailure: expected:<cf[function]> but was:<cf[argument]>
 	public void testGetEnclosingTag() {
-		String path = "";
-		try {
-			path = new URL(sourceUrlFile).getPath();
-		} catch (MalformedURLException e) {
-			// Auto-generated catch block
-			e.printStackTrace();
-		}
-		ParserTag parserTag = fCfmlParser.getCFMLSource(path).getEnclosingTag(592);
-		System.out.println(fCfmlParser.printMessages());
-		assertEquals("cffunction", parserTag.getName());
-	}
-	
-	@Test
-	@Ignore
-	// TODO:org.junit.ComparisonFailure: expected:<cf[argument]> but was:<cf[function]>
-	public void testGetNextTag() {
-		String path = "";
-		try {
-			path = new URL(sourceUrlFile).getPath();
-		} catch (MalformedURLException e) {
-			// Auto-generated catch block
-			e.printStackTrace();
-		}
-		ParserTag parserTag = fCfmlParser.getCFMLSource(path).getNextTag(547);
-		System.out.println(fCfmlParser.printMessages());
-		assertEquals("cfargument", parserTag.getName());
-	}
-	
-	@Test
-	@Ignore
-	// NullPointerException
-	public void testGetPreviousTag() {
-		String path = "";
-		System.out.println(sourceUrlFile);
-		try {
-			path = new URL(sourceUrlFile).getPath();
-		} catch (MalformedURLException e) {
-			// Auto-generated catch block
-			e.printStackTrace();
-		}
-		ParserTag parserTag = fCfmlParser.getCFMLSource(path).getPreviousTag(833);
-		System.out.println(fCfmlParser.printMessages());
+		String source = "<cfset a=1><cfquery name=\"q\">x</cfquery>";
+		CFMLSource cfmlSource = fCfmlParser.addCFMLSource("nav-inline.cfm", source);
+		// Jericho getEnclosingTag only resolves positions inside tag markup, not element text.
+		ParserTag parserTag = cfmlSource.getEnclosingTag(source.indexOf("cfquery"));
 		assertEquals("cfquery", parserTag.getName());
+	}
+	
+	@Test
+	public void testGetNextTag() {
+		String source = "<cfset a=1><cfquery name=\"q\">x</cfquery>";
+		CFMLSource cfmlSource = fCfmlParser.addCFMLSource("nav-inline.cfm", source);
+		ParserTag parserTag = cfmlSource.getNextTag(1);
+		assertEquals("cfquery", parserTag.getName());
+	}
+	
+	@Test
+	public void testGetPreviousTag() {
+		String source = "<cfset a=1><cfquery name=\"q\">x</cfquery>";
+		CFMLSource cfmlSource = fCfmlParser.addCFMLSource("nav-inline.cfm", source);
+		// Inside the cfquery start tag, previous resolves to the preceding cfset.
+		ParserTag parserTag = cfmlSource.getPreviousTag(source.indexOf("cfquery"));
+		assertEquals("cfset", parserTag.getName());
 	}
 	
 	@Test
