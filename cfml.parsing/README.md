@@ -1,21 +1,25 @@
 # cfml.parsing
 
-[![Build Status](https://travis-ci.org/cfparser/cfparser.svg?branch=master)](https://travis-ci.org/cfparser/cfparser)
+[![Build Status](https://travis-ci.org/cfparser/cfparser.svg?branch=java-21)](https://travis-ci.org/cfparser/cfparser)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/b25fc5beacea4d4f9c493971fcfb7e90)](https://www.codacy.com/app/ryaneberly/cfparser?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=cfparser/cfparser&amp;utm_campaign=Badge_Grade)
 
-A CFML parser.  Uses the cfml.dictionary project to provide engine-specific information.
+CFML parser for the Java 21 line (`21.0.0`). Uses `cfml.dictionary` for engine-specific tag and function metadata.
 
-CFParser is available on Maven Central!
+On Maven Central. License: BSD (<http://www.opensource.org/licenses/bsd-license.html>).
 
-The CFParser license is BSD (<http://www.opensource.org/licenses/bsd-license.html>).
+Build:
 
-To build use:
+```
 mvn clean install
+```
 
 ```xml
 <dependency>
     <groupId>com.github.cfmleditor</groupId>
     <artifactId>cfml.parsing</artifactId>
-    <version>2.16.1-SNAPSHOT</version>
+    <version>21.0.0</version>
 </dependency>
 ```
+
+Modern script fixtures: `src/test/resources/cfml/tests/modern/`.
+Parameterized tests: `cfml.parsing.TestFiles`. Arrow AST: `cfml.parsing.TestLambdaAst`.

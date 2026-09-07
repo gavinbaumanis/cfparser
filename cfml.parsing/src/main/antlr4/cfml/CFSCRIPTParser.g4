@@ -585,9 +585,9 @@ compareExpressionOperator:
     |   NEQ //-> ^(NEQ)
     |   CONTAINS //-> ^(CONTAINS)
     |   DOESNOTCONTAIN
-    |   INSTANCEOF
     |   CT
     |   NCT
+    |   INSTANCEOF
  ;
 	
 
@@ -712,7 +712,7 @@ specialWord
   ;
 
 argumentList
-  : argument (COMMA argument)*
+  : argument (COMMA argument)* COMMA?
   | //-> ^(EMPTYARGS)
   ;
 
@@ -747,11 +747,11 @@ identifier
   | VAR
   | TO
   | DEFAULT // default is a cfscript keyword that's always allowed as a var name
-  | INSTANCEOF // ColdBox's Matcher and TestBox's Assertion both declare function instanceOf()
   | FINAL     // modifiers, and ordinary names -- `final = 3;` is a variable called final
   | ABSTRACT
   | CT   // two-letter operator abbreviations; far too likely as ordinary names
   | NCT
+  | INSTANCEOF // ColdBox's Matcher and TestBox's Assertion both declare function instanceOf()
   | INCLUDE
   | NEW
   | ABORT

@@ -4,7 +4,7 @@ plugins {
 	id 'net.researchgate.release' version '3.0.2' apply(false)
 }
 
-version = '2.16.1-SNAPSHOT'
+version = '21.0.0'
 
 license {
 	header rootProject.file('LICENSE')
@@ -96,7 +96,7 @@ subprojects {
 	apply plugin: 'jacoco'
 
 	jacoco {
-		toolVersion = '0.8.12'
+		toolVersion = '0.8.15'
 	}
 
 	// `gradle build` runs test, so coverage reports come along with the normal CI build.

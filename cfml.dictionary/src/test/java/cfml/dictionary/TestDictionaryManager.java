@@ -1,9 +1,14 @@
 package cfml.dictionary;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import cfml.dictionary.preferences.DictionaryPreferenceConstants;
@@ -16,32 +21,63 @@ public class TestDictionaryManager {
 	@Before
 	public void setUp() throws Exception {
 		fPrefs = new DictionaryPreferences();
+		DictionaryManager.initDictionaries(fPrefs);
 	}
 	
 	@Test
 	public void testGetConfiguredDictionaries() {
-		DictionaryManager.initDictionaries();
 		String[][] fun = DictionaryManager.getConfiguredDictionaries();
 		assertNotNull(fun);
 	}
 	
 	@Test
 	public void testGetDictionary() {
-		DictionaryManager.initDictionaries();
 		SyntaxDictionary fun = DictionaryManager.getDictionary(DictionaryPreferenceConstants.CFDIC_KEY);
-		System.err.println(fun.dictionaryURL);
-		fun.getAllTags();
 		assertNotNull(fun);
+		fun.getAllTags();
 	}
 	
-	@Ignore
 	@Test
 	public void testGetDictionaryByVersion() {
-		DictionaryManager.initDictionaries();
 		SyntaxDictionary fun = DictionaryManager.getDictionaryByVersion(fPrefs.getCFDictionary());
-		System.err.println(fun.dictionaryURL);
-		fun.getAllTags();
 		assertNotNull(fun);
+		assertTrue(fun.tagExists("cfset") || fun.tagExists("cfquery"));
+	}
+	
+	@Test
+	public void testGetFirstVersion() {
+		String first = DictionaryManager.getFirstVersion(DictionaryManager.CFDIC_KEY);
+		assertNotNull(first);
+		assertFalse(first.trim().isEmpty());
+	}
+	
+	@Test
+	public void testAddDictionaryAndGetDictionaries() {
+		String key = "test-custom-dict-" + System.nanoTime();
+		SyntaxDictionary dict = DictionaryManager.getDictionary(DictionaryManager.CFDIC_KEY);
+		assertNotNull(dict);
+		DictionaryManager.addDictionary(key, dict);
+		try {
+			assertSame(dict, DictionaryManager.getDictionaries().get(key));
+		} finally {
+			DictionaryManager.getDictionaries().remove(key);
+		}
+	}
+	
+	@Test
+	public void testDictionaryCacheRoundTrip() {
+		Map originalCache = DictionaryManager.getDictionariesCache();
+		Map workingCache = new HashMap(originalCache);
+		DictionaryManager.setDictionariesCache(workingCache);
+		String key = "test-cache-dict-" + System.nanoTime();
+		SyntaxDictionary dict = DictionaryManager.getDictionary(DictionaryManager.CFDIC_KEY);
+		assertNotNull(dict);
+		try {
+			DictionaryManager.addDictionaryToCache(key, dict);
+			assertSame(dict, DictionaryManager.getDictionariesCache().get(key));
+		} finally {
+			DictionaryManager.setDictionariesCache(originalCache);
+		}
 	}
 	
 	@Test

@@ -1,0 +1,241 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Block arrow as struct value (iposhighscore shape)>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+IDENTIFIER               <rows>
+'='                      <=>
+'['                      <[>
+']'                      <]>
+';'                      <;>
+Hidden:NEWLINE                  <>
+IDENTIFIER               <rptdetails>
+'='                      <=>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+OPEN_STRING              <'>
+STRING_LITERAL           <heading>
+CLOSE_STRING             <'>
+'='                      <=>
+OPEN_STRING              <'>
+STRING_LITERAL           <iPOS>
+CLOSE_STRING             <'>
+','                      <,>
+Hidden:NEWLINE                  <>
+OPEN_STRING              <'>
+STRING_LITERAL           <data>
+CLOSE_STRING             <'>
+'='                      <=>
+IDENTIFIER               <seq>
+'.'                      <.>
+IDENTIFIER               <Map>
+'('                      <(>
+IDENTIFIER               <rows>
+','                      <,>
+'('                      <(>
+IDENTIFIER               <row>
+')'                      <)>
+'=>'                     <=>>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+'['                      <[>
+IDENTIFIER               <row>
+'.'                      <.>
+IDENTIFIER               <id>
+','                      <,>
+IDENTIFIER               <row>
+'.'                      <.>
+IDENTIFIER               <name>
+']'                      <]>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+')'                      <)>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+';'                      <;>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <rptdetails>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          parameterList
+          )
+          (compoundStatement
+            {
+            (statement
+              (assignmentExpression
+                (startExpression
+                  (baseExpression (unaryExpression (memberExpression (identifier rows))))
+                )
+                =
+                (startExpression
+                  (baseExpression (unaryExpression (primaryExpression (implicitArray [ ]))))
+                )
+              )
+              (endOfStatement ;)
+            )
+            (statement
+              (assignmentExpression
+                (startExpression
+                  (baseExpression (unaryExpression (memberExpression (identifier rptdetails))))
+                )
+                =
+                (startExpression
+                  (baseExpression
+                    (unaryExpression
+                      (primaryExpression
+                        (implicitStruct
+                          {
+                          (implicitStructElements
+                            (implicitStructExpression
+                              (implicitStructKeyExpression
+                                (literalExpression (stringLiteral ' (stringLiteralPart heading) '))
+                              )
+                              =
+                              (baseExpression
+                                (unaryExpression
+                                  (primaryExpression
+                                    (literalExpression (stringLiteral ' (stringLiteralPart iPOS) '))
+                                  )
+                                )
+                              )
+                            )
+                            ,
+                            (implicitStructExpression
+                              (implicitStructKeyExpression
+                                (literalExpression (stringLiteral ' (stringLiteralPart data) '))
+                              )
+                              =
+                              (baseExpression
+                                (unaryExpression
+                                  (memberExpression
+                                    (identifier seq)
+                                    .
+                                    (qualifiedFunctionCall
+                                      (identifier Map)
+                                      (
+                                      (argumentList
+                                        (argument
+                                          (startExpression
+                                            (baseExpression (unaryExpression (memberExpression (identifier rows))))
+                                          )
+                                        )
+                                        ,
+                                        (argument
+                                          (lambdaDeclaration
+                                            (
+                                            (parameterList (parameter (identifier row)))
+                                            )
+                                            =>
+                                            (compoundStatement
+                                              {
+                                              (statement
+                                                (returnStatement
+                                                  return
+                                                  (anExpression
+                                                    (startExpression
+                                                      (baseExpression
+                                                        (unaryExpression
+                                                          (primaryExpression
+                                                            (implicitArray
+                                                              [
+                                                              (implicitArrayElements
+                                                                (startExpression
+                                                                  (baseExpression
+                                                                    (unaryExpression (memberExpression (identifier row) . (identifier id)))
+                                                                  )
+                                                                )
+                                                                ,
+                                                                (startExpression
+                                                                  (baseExpression
+                                                                    (unaryExpression (memberExpression (identifier row) . (identifier name)))
+                                                                  )
+                                                                )
+                                                              )
+                                                              ]
+                                                            )
+                                                          )
+                                                        )
+                                                      )
+                                                    )
+                                                  )
+                                                )
+                                                (endOfStatement ;)
+                                              )
+                                              }
+                                            )
+                                          )
+                                        )
+                                      )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                          }
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression (unaryExpression (memberExpression (identifier rptdetails))))
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test()     {
+rows = [];
+rptdetails = {'heading':'iPOS','data':seq.Map(rows, (row) => {
+  return [row.id.row.name];
+
+})};
+      return rptdetails;
+
+    }
+}
+/*======*/

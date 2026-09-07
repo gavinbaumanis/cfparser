@@ -588,10 +588,10 @@ Hidden:NEWLINE                  <>
 {
 increment = (x) -> x + 1;
 closure = (x) => x + 1;
-addBoth = (a, b) ->   {
-    return a + b;
+addBoth = (a, b) -> {
+  return a + b;
 
-  };
+};
 double = (t) -> t * 2;
 names = urls.map((target) -> target.toString());
 shrinking = i-- > 0;

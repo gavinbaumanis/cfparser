@@ -70,7 +70,6 @@ import cfml.parsing.cfscript.CFExpression;
 import cfml.parsing.cfscript.CFFullVarExpression;
 import cfml.parsing.cfscript.CFFunctionExpression;
 import cfml.parsing.cfscript.CFIdentifier;
-import cfml.parsing.cfscript.CFLambdaExpression;
 import cfml.parsing.cfscript.CFLiteral;
 import cfml.parsing.cfscript.CFMember;
 import cfml.parsing.cfscript.CFNestedExpression;
@@ -84,7 +83,6 @@ import cfml.parsing.cfscript.CFUnaryExpression;
 import cfml.parsing.cfscript.CFVarDeclExpression;
 import cfml.parsing.cfscript.script.CFCompDeclStatement;
 import cfml.parsing.cfscript.script.CFFuncDeclStatement;
-import cfml.parsing.cfscript.script.CFReturnStatement;
 
 public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression> {
 	
@@ -245,6 +243,10 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 			CFTernaryExpression ternaryExpression = new CFTernaryExpression(tex.getStart(), visit(ctx.left),
 					visit(tex.ternaryExpression1), visit(tex.ternaryExpression2));
 			return ternaryExpression;
+		} else if (ctx.lambdaDeclaration() != null) {
+			return visitLambdaDeclaration(ctx.lambdaDeclaration());
+		} else if (ctx.anonymousFunctionDeclaration() != null) {
+			return visitAnonymousFunctionDeclaration(ctx.anonymousFunctionDeclaration());
 		} else if (ctx.getChildCount() == 3) {
 			return new CFBinaryExpression(getTerminalToken(ctx.getChild(1)), visit(ctx.left), visit(ctx.right));
 		} else
@@ -645,16 +647,12 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 				.visitAnonymousFunctionDeclaration(ctx);
 		return new CFAnonymousFunctionExpression(ctx.FUNCTION().getSymbol(), funcDeclStatement);
 	}
-	
+
 	@Override
 	public CFExpression visitLambdaDeclaration(LambdaDeclarationContext ctx) {
 		CFFuncDeclStatement funcDeclStatement = (CFFuncDeclStatement) getCFScriptStatementVisitor()
 				.visitLambdaDeclaration(ctx);
-		// Take the body back off the implicit return the statement visitor built rather than
-		// visiting simpleExpression a second time, so the lambda holds one expression tree.
-		CFExpression expressionBody = funcDeclStatement.getBody() instanceof CFReturnStatement
-				? ((CFReturnStatement) funcDeclStatement.getBody()).getExpression() : null;
-		return new CFLambdaExpression(ctx.getStart(), ctx.operator, funcDeclStatement, expressionBody);
+		return new CFAnonymousFunctionExpression(ctx.operator, funcDeclStatement, true);
 	}
 	
 	public synchronized CFScriptStatementVisitor getCFScriptStatementVisitor() {

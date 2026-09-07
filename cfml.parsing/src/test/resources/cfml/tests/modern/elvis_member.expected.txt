@@ -1,0 +1,81 @@
+/*===TOKENS===*/
+COMPONENT                <component>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+Hidden:LINE_COMMENT             <// Elvis / null-coalesce on member access (qhapdc shape)>
+FUNCTION                 <function>
+IDENTIFIER               <test>
+'('                      <(>
+REQUIRED                 <required>
+STRUCT                   <struct>
+IDENTIFIER               <pat>
+')'                      <)>
+'{'                      <{>
+Hidden:NEWLINE                  <>
+RETURN                   <return>
+IDENTIFIER               <pat>
+'.'                      <.>
+IDENTIFIER               <uniqueno>
+'?'                      <?>
+':'                      <:>
+OPEN_STRING              <'>
+CLOSE_STRING             <'>
+';'                      <;>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+'}'                      <}>
+Hidden:NEWLINE                  <>
+/*===TREE===*/
+(scriptBlock
+  (componentDeclaration
+    component
+    (componentGuts
+      {
+      (element
+        (functionDeclaration
+          function
+          (identifier test)
+          (
+          (parameterList
+            (parameter required (parameterType (typeSpec (type struct))) (identifier pat))
+          )
+          )
+          (compoundStatement
+            {
+            (statement
+              (returnStatement
+                return
+                (anExpression
+                  (startExpression
+                    (baseExpression
+                      (baseExpression
+                        (unaryExpression (memberExpression (identifier pat) . (identifier uniqueno)))
+                      )
+                      (elvisOperator ? :)
+                      (baseExpression
+                        (unaryExpression (primaryExpression (literalExpression (stringLiteral ' '))))
+                      )
+                    )
+                  )
+                )
+              )
+              (endOfStatement ;)
+            )
+            }
+          )
+        )
+      )
+      }
+    )
+  )
+)
+/*======*/
+/*===DECOMPILE===*/
+component {
+  public function test(required pat)     {
+      return pat.uniqueno ?: '';
+
+    }
+}
+/*======*/
