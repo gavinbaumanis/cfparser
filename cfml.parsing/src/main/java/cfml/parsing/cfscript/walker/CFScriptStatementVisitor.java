@@ -8,10 +8,13 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import cfml.CFSCRIPTParser.AbortStatementContext;
 import cfml.CFSCRIPTParser.AdminStatementContext;
+import cfml.CFSCRIPTParser.AnExpressionContext;
 import cfml.CFSCRIPTParser.AnonymousFunctionDeclarationContext;
 import cfml.CFSCRIPTParser.AssignmentExpressionContext;
 import cfml.CFSCRIPTParser.BaseExpressionContext;
@@ -40,6 +43,7 @@ import cfml.CFSCRIPTParser.LambdaDeclarationContext;
 import cfml.CFSCRIPTParser.LocalAssignmentExpressionContext;
 import cfml.CFSCRIPTParser.LockStatementContext;
 import cfml.CFSCRIPTParser.ParamContext;
+import cfml.CFSCRIPTParser.ParamExpressionContext;
 import cfml.CFSCRIPTParser.ParamStatementAttributesContext;
 import cfml.CFSCRIPTParser.ParamStatementContext;
 import cfml.CFSCRIPTParser.ParameterContext;
@@ -51,6 +55,9 @@ import cfml.CFSCRIPTParser.ScriptBlockContext;
 import cfml.CFSCRIPTParser.StartExpressionContext;
 import cfml.CFSCRIPTParser.StatementContext;
 import cfml.CFSCRIPTParser.SwitchStatementContext;
+import cfml.CFSCRIPTParser.StaticBlockContext;
+import cfml.CFSCRIPTParser.StaticMemberContext;
+import cfml.CFSCRIPTParser.TemplateBlockContext;
 import cfml.CFSCRIPTParser.TagFunctionStatementContext;
 import cfml.CFSCRIPTParser.TagStatementContext;
 import cfml.CFSCRIPTParser.TagThrowStatementContext;
@@ -94,6 +101,8 @@ import cfml.parsing.cfscript.script.CFReturnStatement;
 import cfml.parsing.cfscript.script.CFScriptStatement;
 import cfml.parsing.cfscript.script.CFSwitchStatement;
 import cfml.parsing.cfscript.script.CFTagThrowStatement;
+import cfml.parsing.cfscript.script.CFStaticBlockStatement;
+import cfml.parsing.cfscript.script.CFTemplateBlockStatement;
 import cfml.parsing.cfscript.script.CFThreadStatement;
 import cfml.parsing.cfscript.script.CFThrowStatement;
 import cfml.parsing.cfscript.script.CFTransactionStatement;
@@ -117,6 +126,9 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 		Map<CFExpression, CFExpression> _attr = new LinkedHashMap<CFExpression, CFExpression>();
 		CFCompDeclStatement compDeclStatement = new CFCompDeclStatement(ctx.COMPONENT().getSymbol(), _attr,
 				visit(ctx.componentGuts()));
+		if (ctx.componentModifier() != null) {
+			compDeclStatement.setModifier(getText(ctx.componentModifier()));
+		}
 		for (ComponentAttributeContext attr : ctx.componentAttribute()) {
 			CFIdentifier name = (CFIdentifier) visitExpression(attr.id);
 			if (attr.prefix != null) {
@@ -240,6 +252,10 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 			aggregator.push(parameters);
 			visitChildren(ctx.parameterList());
 			aggregator.pop();
+		} else if (ctx.single != null) {
+			// The parenthesis-less single parameter, t -> t.b().
+			parameters.add(new CFFunctionParameter((CFIdentifier) cfExpressionVisitor.visit(ctx.single), false, null,
+					null));
 		}
 
 		CFScriptStatement body;
@@ -251,7 +267,7 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 			body = null;
 		}
 
-		return new CFFuncDeclStatement(ctx.LAMBDAOP().getSymbol(), (CFIdentifier) null, null, null, parameters,
+		return new CFFuncDeclStatement(ctx.operator, (CFIdentifier) null, null, null, parameters,
 				new LinkedHashMap<CFExpression, CFExpression>(), body, false, false, false);
 	}
 	
@@ -467,8 +483,14 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 	@Override
 	public CFScriptStatement visitIncludeStatement(IncludeStatementContext ctx) {
 		// System.out.println("visitIncludeStatement");
+		if (ctx.baseExpression() != null) {
+			return new CFIncludeStatement(ctx.INCLUDE().getSymbol(), cfExpressionVisitor.visit(ctx.baseExpression()));
+		}
 		CFIncludeStatement includeStatement = new CFIncludeStatement(ctx.INCLUDE().getSymbol(),
-				cfExpressionVisitor.visit(ctx.baseExpression()));
+				new LinkedHashMap<CFIdentifier, CFExpression>());
+		aggregator.push(includeStatement);
+		visitChildren(ctx.paramStatementAttributes());
+		aggregator.pop();
 		return includeStatement;
 	}
 	
@@ -500,9 +522,12 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 		Map<CFIdentifier, CFExpression> _attr = new HashMap<CFIdentifier, CFExpression>();
 		CFMLFunctionStatement cfmlFunctionStatement = new CFMLFunctionStatement(ctx.start, ctx.cfmlFunction().start, _attr,
 				visitNullSafe(ctx.compoundStatement()));
-		if (ctx.paramStatementAttributes() != null) {
+		// The attributes arrive bare or parenthesised; visitParam fills the statement either way.
+		ParserRuleContext attributes = ctx.paramStatementAttributes() != null ? ctx.paramStatementAttributes()
+				: ctx.tagAttributeList();
+		if (attributes != null) {
 			aggregator.push(cfmlFunctionStatement);
-			visitChildren(ctx.paramStatementAttributes());
+			visitChildren(attributes);
 			aggregator.pop();
 		}
 		return cfmlFunctionStatement;
@@ -571,13 +596,60 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 	}
 	
 	@Override
+	public CFScriptStatement visitStaticBlock(StaticBlockContext ctx) {
+		// Without a visitor here the block was flattened by visitChildren: static { myVar = "v"; }
+		// decompiled to plain myVar = 'v', losing the fact that the member was static at all.
+		List<CFScriptStatement> members = new ArrayList<CFScriptStatement>();
+		List<String> accessTypes = new ArrayList<String>();
+		for (StaticMemberContext member : ctx.staticMember()) {
+			CFScriptStatement statement = visit(member.statement());
+			if (statement != null) {
+				members.add(statement);
+				accessTypes.add(member.accessType() == null ? null : member.accessType().getText());
+			}
+		}
+		return new CFStaticBlockStatement(ctx.STATIC().getSymbol(), members, accessTypes);
+	}
+
+	@Override
+	public CFScriptStatement visitTemplateBlock(TemplateBlockContext ctx) {
+		// The body is markup, not cfscript, so it is kept verbatim rather than modelled. Only the
+		// interpolations are parsed -- without a visitor here the block vanished from the tree and
+		// its #...# expressions leaked out as bare statements.
+		List<CFExpression> expressions = new ArrayList<CFExpression>();
+		for (AnExpressionContext interpolation : ctx.anExpression()) {
+			CFExpression expression = cfExpressionVisitor.visit(interpolation);
+			if (expression != null) {
+				expressions.add(expression);
+			}
+		}
+		Token open = ctx.OPEN_TEMPLATE().getSymbol();
+		Token close = ctx.CLOSE_TEMPLATE().getSymbol();
+		String content = open.getInputStream().getText(
+				Interval.of(open.getStopIndex() + 1, close.getStartIndex() - 1));
+		return new CFTemplateBlockStatement(open, content, expressions);
+	}
+	
+	@Override
 	public CFScriptStatement visitParamStatement(ParamStatementContext ctx) {
 		// System.out.println("visitParamStatement");
 		Map<CFIdentifier, CFExpression> _attributes = new HashMap<CFIdentifier, CFExpression>();
 		CFParamStatement paramStatement = new CFParamStatement(ctx.PARAM().getSymbol(), _attributes);
 		aggregator.push(paramStatement);
-		if (ctx.paramStatementAttributes() != null)
+		if (ctx.paramStatementAttributes() != null) {
 			visitChildren(ctx.paramStatementAttributes());
+		} else if (ctx.paramExpression() != null) {
+			// The typed shorthand used to be parsed and then thrown away, so
+			// `param string foo = "x";` decompiled to a bare `param`.
+			ParamExpressionContext shorthand = ctx.paramExpression();
+			paramStatement.setIsShortHand(true);
+			paramStatement.setParamName(visitExpression(shorthand.multipartIdentifier()));
+			paramStatement.setParamType(visitExpression(shorthand.type()));
+			paramStatement.setDefaultExpression(visitExpression(shorthand.startExpression()));
+			if (shorthand.paramStatementAttributes() != null) {
+				visitChildren(shorthand.paramStatementAttributes());
+			}
+		}
 		aggregator.pop();
 		return paramStatement;
 	}
@@ -588,17 +660,15 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 		Map<CFIdentifier, CFExpression> _attributes = new HashMap<CFIdentifier, CFExpression>();
 		CFPropertyStatement propertyStatement = new CFPropertyStatement(ctx.PROPERTY().getSymbol(), _attributes);
 		aggregator.push(propertyStatement);
-		if (ctx.paramStatementAttributes() != null) {
-			visitChildren(ctx.paramStatementAttributes());
-		} else {
+		// The two are not exclusive: `property string email default="";` is the typed shorthand
+		// *and* carries an attribute, and branching on the attributes alone lost the name and type.
+		if (ctx.multipartIdentifier() != null) {
 			propertyStatement.setIsShortHand(true);
 			propertyStatement.setPropertyName((CFIdentifier) visitExpression(ctx.multipartIdentifier()));
 			propertyStatement.setPropertyType(visitExpression(ctx.typeSpec()));
-			/*
-			 * if (ctx.type() != null) { propertyStatement.getAttributes().put(new CFIdentifier(ctx.type().start,
-			 * "type"), visitExpression(ctx.type())); } propertyStatement.getAttributes().put(new
-			 * CFIdentifier(ctx.identifier().start, "name"), visitExpression(ctx.identifier()));
-			 */
+		}
+		if (ctx.paramStatementAttributes() != null) {
+			visitChildren(ctx.paramStatementAttributes());
 		}
 		aggregator.pop();
 		return propertyStatement;
@@ -686,17 +756,13 @@ public class CFScriptStatementVisitor extends CFSCRIPTParserBaseVisitor<CFScript
 				((CFCompoundStatement) aggregate).add(nextResult);
 				return aggregate;
 			} else {
+				// Both in source order. This branch used to send function declarations through
+				// CFCompoundStatement.addFunction, which inserts at index 0 -- calling it for each
+				// of a pair transposed them, so a component's first two functions came out
+				// swapped. Every other branch here appends, and so does this one now.
 				CFCompoundStatement statement = new CFCompoundStatement();
-				if (aggregate instanceof CFFuncDeclStatement) {
-					statement.addFunction(aggregate);
-				} else {
-					statement.add(aggregate);
-				}
-				if (nextResult instanceof CFFuncDeclStatement) {
-					statement.addFunction(nextResult);
-				} else {
-					statement.add(nextResult);
-				}
+				statement.add(aggregate);
+				statement.add(nextResult);
 				aggregate = statement;
 				return statement;
 			}

@@ -1,12 +1,20 @@
 package cfml.parsing;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import cfml.parsing.cfscript.script.CFIncludeStatement;
+import cfml.parsing.cfscript.script.CFMLFunctionStatement;
+import cfml.parsing.cfscript.script.CFParamStatement;
+import cfml.parsing.cfscript.script.CFPropertyStatement;
 import cfml.parsing.cfscript.script.CFScriptStatement;
+import cfml.parsing.reporting.ParseException;
 
 public class TestCFMLFunctionStatement {
 	
@@ -116,17 +124,139 @@ public class TestCFMLFunctionStatement {
 		assertNotNull(scriptStatement);
 	}
 	
+	/**
+	 * The attribute form of include used to be a parse error, which this test asserted. It is valid
+	 * CFML -- the script spelling of &lt;cfinclude template="..."&gt; -- so it now has to parse, and
+	 * getTemplate() has to answer the same way it does for include "...".
+	 */
 	@Test
-	public void testIncludeWithTemplateStatementFail() {
+	public void testIncludeWithTemplateStatement() {
 		String script = "include template=\"/ram/#randName#\";";
-		CFScriptStatement scriptStatement = null;
-		scriptStatement = parseScript(script);
+		CFScriptStatement scriptStatement = parseScript(script);
 		scriptStatement.Decompile(0);
-		if (fCfmlParser.getMessages().size() != 1) {
-			fail("error expected");
+		if (fCfmlParser.getMessages().size() > 0) {
+			fail("whoops! " + fCfmlParser.getMessages());
 		}
+		assertNotNull(scriptStatement);
+		CFIncludeStatement includeStatement = (CFIncludeStatement) scriptStatement;
+		assertEquals(1, includeStatement.getAttributes().size());
+		assertNotNull(includeStatement.getTemplate());
+	}
+
+	@Test
+	public void testIncludeWithMultipleAttributes() {
+		String script = "include template=\"a.cfm\" runOnce=true;";
+		CFScriptStatement scriptStatement = parseScript(script);
+		if (fCfmlParser.getMessages().size() > 0) {
+			fail("whoops! " + fCfmlParser.getMessages());
+		}
+		CFIncludeStatement includeStatement = (CFIncludeStatement) scriptStatement;
+		assertEquals(2, includeStatement.getAttributes().size());
+		assertEquals("'a.cfm'", includeStatement.getTemplate().Decompile(0));
 	}
 	
+	@Test
+	public void testParenthesisedTagAttributes() {
+		CFScriptStatement scriptStatement = parseScript("cfdirectory( directory=dir action=\"list\" );");
+		if (fCfmlParser.getMessages().size() > 0) {
+			fail("whoops! " + fCfmlParser.getMessages());
+		}
+		assertEquals(2, ((CFMLFunctionStatement) scriptStatement).getAttributes().size());
+	}
+
+	/**
+	 * A comma at the first junction has to leave the call alone: update(id=1, name="x") is far more
+	 * likely a user function than the cfupdate tag, and the two are otherwise indistinguishable. Only
+	 * the space-separated form is unambiguously a tag.
+	 */
+	@Test
+	public void testCommaSeparatedCallIsNotATag() {
+		CFScriptStatement scriptStatement = parseScript("cfdirectory(directory=dir, action=\"list\");");
+		if (fCfmlParser.getMessages().size() > 0) {
+			fail("whoops! " + fCfmlParser.getMessages());
+		}
+		assertFalse("comma-separated arguments should stay an ordinary call",
+				scriptStatement instanceof CFMLFunctionStatement);
+	}
+
+	/**
+	 * validateAttributes compares against an upper-case allowed set, so it has to fold case or it
+	 * rejects the ordinary spelling of a valid attribute. Pinned directly because nothing calls the
+	 * method today -- CFParamStatement's constructor used to, on a map the visitor had not filled
+	 * yet, so the fault was invisible from the outside. See #39.
+	 */
+	@Test
+	public void testValidateAttributesIgnoresCase() {
+		CFScriptStatement scriptStatement = parseScript("param name=\"url.age\" type=\"numeric\" default=\"1\";");
+		CFParamStatement paramStatement = (CFParamStatement) scriptStatement;
+		assertEquals(3, paramStatement.getAttributes().size());
+		// lower case as written, upper case in the allowed set
+		paramStatement.validateAttributes(paramStatement.getToken(), CFParamStatement.getValidAttributes());
+	}
+
+	@Test
+	public void testValidateAttributesStillRejectsUnknownOnes() {
+		CFScriptStatement scriptStatement = parseScript("param name=\"x\" bogus=\"y\";");
+		CFParamStatement paramStatement = (CFParamStatement) scriptStatement;
+		try {
+			paramStatement.validateAttributes(paramStatement.getToken(), CFParamStatement.getValidAttributes());
+			fail("bogus should not have validated");
+		} catch (ParseException expected) {
+			assertTrue(expected.getMessage(), expected.getMessage().contains("bogus"));
+		}
+	}
+
+	/**
+	 * maxlength is a cfparam attribute the allowed set did not list, so a valid param counted as
+	 * invalid. getValidAttributes() is public, so the wrong answer was reachable from outside.
+	 */
+	@Test
+	public void testParamAllowsMaxLength() {
+		CFScriptStatement scriptStatement = parseScript("param name=\"x\" maxlength=\"5\";");
+		CFParamStatement paramStatement = (CFParamStatement) scriptStatement;
+		paramStatement.validateAttributes(paramStatement.getToken(), CFParamStatement.getValidAttributes());
+	}
+
+	/**
+	 * cfproperty's allowed set held cfparam's six attributes. Every one of these is a real
+	 * cfproperty attribute and every one of them was rejected -- getter and setter are on more or
+	 * less every accessor-generating CFC, and the ORM ones on every persistent entity.
+	 */
+	@Test
+	public void testPropertyAllowsItsOwnAttributes() {
+		CFScriptStatement scriptStatement = parseScript(
+				"property name=\"email\" type=\"string\" getter=\"true\" setter=\"false\" "
+						+ "required=\"true\" persistent=\"true\" fieldtype=\"column\" ormtype=\"string\" "
+						+ "hint=\"the address\";");
+		CFPropertyStatement propertyStatement = (CFPropertyStatement) scriptStatement;
+		assertEquals(9, propertyStatement.getAttributes().size());
+		propertyStatement.validateAttributes(propertyStatement.getToken(), CFPropertyStatement.getValidAttributes());
+	}
+
+	/**
+	 * The two sets are genuinely different tags and must not drift back into being copies.
+	 */
+	@Test
+	public void testPropertyAndParamSetsAreNotTheSame() {
+		assertEquals(7, CFParamStatement.getValidAttributes().size());
+		assertEquals(65, CFPropertyStatement.getValidAttributes().size());
+		assertFalse("property must not simply carry param's attributes",
+				CFPropertyStatement.getValidAttributes().equals(CFParamStatement.getValidAttributes()));
+	}
+
+	@Test
+	public void testPropertyStillRejectsUnknownAttributes() {
+		CFScriptStatement scriptStatement = parseScript("property name=\"x\" bogus=\"y\";");
+		CFPropertyStatement propertyStatement = (CFPropertyStatement) scriptStatement;
+		try {
+			propertyStatement.validateAttributes(propertyStatement.getToken(),
+					CFPropertyStatement.getValidAttributes());
+			fail("bogus should not have validated");
+		} catch (ParseException expected) {
+			assertTrue(expected.getMessage(), expected.getMessage().contains("bogus"));
+		}
+	}
+
 	@Test
 	public void testTransactionStatement() {
 		/* need to check if this is valid in OBD/ACF */
@@ -159,13 +289,37 @@ public class TestCFMLFunctionStatement {
 		assertNotNull(scriptStatement);
 	}
 	
+	/**
+	 * This used to assert the opposite, that a semicolon-less import is an error. It is not an
+	 * import rule: the same text parses cleanly with a trailing newline after it, because
+	 * endOfStatement lets a newline stand in for the semicolon. What it actually pinned was that
+	 * end of input did not count, so the last statement in a file needed a terminator that the same
+	 * statement one line earlier did not.
+	 */
 	@Test
-	public void testImportStatementFail() {
-		/* need to check if this is valid in OBD/ACF */
-		String script = "import projectshen.core.*";
-		parseScript(script);
-		if (fCfmlParser.getMessages().size() != 1) {
+	public void testImportStatementWithoutSemicolon() {
+		parseScript("import projectshen.core.*");
+		if (fCfmlParser.getMessages().size() > 0) {
 			fail("whoops! " + fCfmlParser.getMessages());
+		}
+	}
+
+	/**
+	 * The shape from #37 -- a statement whose last token is a closing brace, at end of input with
+	 * no trailing newline. Written as a JUnit case rather than a fixture because the bug is in the
+	 * final byte of the file, and an editor adding a newline to a fixture would silently neuter it.
+	 */
+	@Test
+	public void testStatementEndingInABlockAtEndOfInput() {
+		for (String script : new String[] { "f = (x) => { return x; }", "f = (x) -> { return x; }",
+				"f = function(x) { return x; }" }) {
+			CFMLParser parser = new CFMLParser();
+			try {
+				parser.parseScript(script);
+			} catch (Exception e) {
+				fail("threw on " + script + ": " + e.getMessage());
+			}
+			assertEquals(script + " should need no trailing semicolon at EOF", 0, parser.getMessages().size());
 		}
 	}
 	

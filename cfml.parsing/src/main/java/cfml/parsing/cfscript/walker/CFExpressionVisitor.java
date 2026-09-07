@@ -2,6 +2,7 @@ package cfml.parsing.cfscript.walker;
 
 import java.util.Stack;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -11,11 +12,13 @@ import cfml.CFSCRIPTParser.AnonymousFunctionDeclarationContext;
 import cfml.CFSCRIPTParser.ArgumentContext;
 import cfml.CFSCRIPTParser.ArrayContext;
 import cfml.CFSCRIPTParser.ArrayMemberExpressionContext;
+import cfml.CFSCRIPTParser.ArraySliceContext;
 import cfml.CFSCRIPTParser.AssignmentExpressionContext;
 import cfml.CFSCRIPTParser.BaseExpressionContext;
 import cfml.CFSCRIPTParser.CfmlFunctionContext;
 import cfml.CFSCRIPTParser.CompareExpressionContext;
 import cfml.CFSCRIPTParser.ComponentAttributeContext;
+import cfml.CFSCRIPTParser.ComponentDeclarationContext;
 import cfml.CFSCRIPTParser.ComponentGutsContext;
 import cfml.CFSCRIPTParser.ComponentPathContext;
 import cfml.CFSCRIPTParser.ConditionContext;
@@ -36,6 +39,7 @@ import cfml.CFSCRIPTParser.LocalAssignmentExpressionContext;
 import cfml.CFSCRIPTParser.MemberExpressionContext;
 import cfml.CFSCRIPTParser.MultipartIdentifierContext;
 import cfml.CFSCRIPTParser.NewComponentExpressionContext;
+import cfml.CFSCRIPTParser.NullSafeOperatorContext;
 import cfml.CFSCRIPTParser.OtherIdentifiersContext;
 import cfml.CFSCRIPTParser.ParameterAttributeContext;
 import cfml.CFSCRIPTParser.ParameterContext;
@@ -47,6 +51,7 @@ import cfml.CFSCRIPTParser.PrimaryExpressionIRWContext;
 import cfml.CFSCRIPTParser.QualifiedFunctionCallContext;
 import cfml.CFSCRIPTParser.ReservedWordContext;
 import cfml.CFSCRIPTParser.SpecialWordContext;
+import cfml.CFSCRIPTParser.StartExpressionContext;
 import cfml.CFSCRIPTParser.StringLiteralContext;
 import cfml.CFSCRIPTParser.StringLiteralPartContext;
 import cfml.CFSCRIPTParser.TagFunctionStatementContext;
@@ -55,6 +60,7 @@ import cfml.CFSCRIPTParser.TypeContext;
 import cfml.CFSCRIPTParser.UnaryExpressionContext;
 import cfml.CFSCRIPTParserBaseVisitor;
 import cfml.parsing.cfscript.ArgumentsVector;
+import cfml.parsing.cfscript.CFAnonymousComponentExpression;
 import cfml.parsing.cfscript.CFAnonymousFunctionExpression;
 import cfml.parsing.cfscript.CFArrayExpression;
 import cfml.parsing.cfscript.CFAssignmentExpression;
@@ -68,12 +74,14 @@ import cfml.parsing.cfscript.CFLiteral;
 import cfml.parsing.cfscript.CFMember;
 import cfml.parsing.cfscript.CFNestedExpression;
 import cfml.parsing.cfscript.CFNewExpression;
+import cfml.parsing.cfscript.CFSliceMember;
 import cfml.parsing.cfscript.CFStringExpression;
 import cfml.parsing.cfscript.CFStructElementExpression;
 import cfml.parsing.cfscript.CFStructExpression;
 import cfml.parsing.cfscript.CFTernaryExpression;
 import cfml.parsing.cfscript.CFUnaryExpression;
 import cfml.parsing.cfscript.CFVarDeclExpression;
+import cfml.parsing.cfscript.script.CFCompDeclStatement;
 import cfml.parsing.cfscript.script.CFFuncDeclStatement;
 
 public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression> {
@@ -176,6 +184,8 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	public CFExpression visitLocalAssignmentExpression(LocalAssignmentExpressionContext ctx) {
 		final CFExpression initExpression = ctx.right == null ? null : visit(ctx.right);
 		CFVarDeclExpression retval = new CFVarDeclExpression(ctx.start, visit(ctx.left), initExpression);
+		retval.setFinal(ctx.FINAL() != null);
+		retval.setStatic(ctx.STATIC() != null);
 		if (ctx.otherIdentifiers().size() > 0) {
 			for (OtherIdentifiersContext oi : ctx.otherIdentifiers()) {
 				CFIdentifier otherid = (CFIdentifier) visit(oi.identifier());
@@ -303,6 +313,7 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 		aggregator.push(fullVarExpression);
 		CFExpression retval = visitChildren(ctx);
 		aggregator.pop();
+		recordMemberOperators(ctx, retval);
 		// negative if minus present
 		// if (ctx.MINUS() != null) {
 		// retval = new CFUnaryExpression(ctx.MINUS().getSymbol(), retval);
@@ -310,6 +321,76 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 		return retval;
 	}
 	
+	/**
+	 * Notes which members were reached with <code>::</code> or <code>?.</code> rather than a dot.
+	 *
+	 * Both used to be discarded: the operator is a separator in memberExpression and never became
+	 * part of the AST, so `a::b` and `a?.b` both decompiled to `a.b`. That is not cosmetic --
+	 * `a?.b` yields null where `a.b` throws, so the round trip changed what the code does.
+	 *
+	 * The association is by source offset rather than by position in the child list, because the
+	 * members are gathered through aggregateResult and one child does not always produce one
+	 * element. Only the two non-default operators are recorded.
+	 */
+	private void recordMemberOperators(MemberExpressionContext ctx, CFExpression retval) {
+		if (!(retval instanceof CFFullVarExpression)) {
+			return;
+		}
+		CFFullVarExpression fullVar = (CFFullVarExpression) retval;
+		String pending = null;
+		for (int i = 0; i < ctx.getChildCount(); i++) {
+			ParseTree child = ctx.getChild(i);
+			String operator = memberOperatorOf(child);
+			if (operator != null) {
+				// DOT carries no information, but it still closes off any pending operator.
+				pending = operator.equals(".") ? null : operator;
+				continue;
+			}
+			if (pending != null) {
+				markMember(fullVar, child, pending);
+				pending = null;
+			}
+		}
+	}
+
+	/** The separator this child represents, or null when it is a member rather than a separator. */
+	private String memberOperatorOf(ParseTree child) {
+		if (child instanceof NullSafeOperatorContext) {
+			return "?.";
+		}
+		if (child instanceof TerminalNode) {
+			int type = ((TerminalNode) child).getSymbol().getType();
+			if (type == CFSCRIPTLexer.DOUBLECOLUMN) {
+				return "::";
+			}
+			if (type == CFSCRIPTLexer.DOT) {
+				return ".";
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Attaches the operator to whichever member starts at this child's first token. Matching on the
+	 * token keeps this correct when the child produced several expressions, or none.
+	 */
+	private void markMember(CFFullVarExpression fullVar, ParseTree child, String operator) {
+		if (!(child instanceof ParserRuleContext)) {
+			return;
+		}
+		Token start = ((ParserRuleContext) child).getStart();
+		if (start == null) {
+			return;
+		}
+		for (CFExpression expression : fullVar.getExpressions()) {
+			if (expression != null && expression.getToken() != null
+					&& expression.getToken().getStartIndex() == start.getStartIndex()) {
+				fullVar.setMemberOperator(expression, operator);
+				return;
+			}
+		}
+	}
+
 	@Override
 	public CFExpression visitInnerExpression(InnerExpressionContext ctx) {
 		return new CFNestedExpression(ctx.POUND_SIGN(0).getSymbol(), visit(ctx.anExpression()));
@@ -317,8 +398,22 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	
 	@Override
 	public CFExpression visitArrayMemberExpression(ArrayMemberExpressionContext ctx) {
+		if (ctx.arraySlice() != null) {
+			return visitArraySlice(ctx.arraySlice());
+		}
 		CFMember member = new CFMember(ctx.getStart(), visit(ctx.getChild(1)));
 		return member;
+	}
+	
+	@Override
+	public CFExpression visitArraySlice(ArraySliceContext ctx) {
+		// Every bound is optional -- s[:6] and s[4:] are both legal -- so each visit is guarded.
+		return new CFSliceMember(ctx.getStart(), visitNullable(ctx.from), visitNullable(ctx.to),
+				visitNullable(ctx.by));
+	}
+	
+	private CFExpression visitNullable(StartExpressionContext ctx) {
+		return ctx == null ? null : visit(ctx);
 	}
 	
 	@Override
@@ -385,7 +480,8 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	
 	@Override
 	public CFExpression visitImplicitOrderedStruct(ImplicitOrderedStructContext ctx) {
-		CFStructExpression structExpression = new CFStructExpression(ctx.getStart(), true);
+		CFStructExpression structExpression = new CFStructExpression(ctx.getStart(), true,
+				ctx.emptyDeclaration == null ? null : ctx.emptyDeclaration.getText());
 		aggregator.push(structExpression);
 		CFExpression retval = super.visitImplicitOrderedStruct(ctx);
 		aggregator.pop();
@@ -412,6 +508,13 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	
 	@Override
 	public CFExpression visitNewComponentExpression(NewComponentExpressionContext ctx) {
+		if (ctx.componentDeclaration() != null) {
+			// `new component { ... }` -- the declaration is built by the statement visitor, the way
+			// an anonymous function's is, and wrapped so it can sit in an expression.
+			CFCompDeclStatement declaration = (CFCompDeclStatement) getCFScriptStatementVisitor()
+					.visitComponentDeclaration(ctx.componentDeclaration());
+			return new CFAnonymousComponentExpression(ctx.NEW().getSymbol(), declaration);
+		}
 		ArgumentsVector args = new ArgumentsVector();
 		if (ctx.getChildCount() > 4) {
 			for (ArgumentContext argCtx : ctx.argumentList().argument()) {
@@ -422,7 +525,16 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 				}
 			}
 		}
-		CFNewExpression newExpression = new CFNewExpression(ctx.NEW().getSymbol(), visit(ctx.componentPath()), args);
+		ComponentPathContext path = ctx.componentPath();
+		String prefix = null;
+		ParseTree pathNode = path;
+		if (path.prefix != null) {
+			// children are [prefix, ':', path]; visiting the whole rule would fold the prefix into
+			// the path and `new java:java.io.File(p)` would name java.java.io.File.
+			prefix = path.prefix.getText();
+			pathNode = path.getChild(2);
+		}
+		CFNewExpression newExpression = new CFNewExpression(ctx.NEW().getSymbol(), visit(pathNode), prefix, args);
 		return newExpression;
 	}
 	
@@ -496,11 +608,10 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	@Override
 	public CFExpression visitTagFunctionStatement(TagFunctionStatementContext ctx) {
 		ArgumentsVector args = new ArgumentsVector();
-		if (ctx.parameterList() != null) {
-			for (ParameterContext argCtx : ctx.parameterList().parameter()) {
+		if (ctx.argumentList() != null) {
+			for (ArgumentContext argCtx : ctx.argumentList().argument()) {
 				if (argCtx.name != null) {
-					args.addNamedArg(visit(argCtx.name),
-							argCtx.startExpression() == null ? null : visit(argCtx.startExpression()));
+					args.addNamedArg(visit(argCtx.name), visit(argCtx.startExpression()));
 				} else {
 					args.add(visit(argCtx));
 				}
@@ -541,7 +652,7 @@ public class CFExpressionVisitor extends CFSCRIPTParserBaseVisitor<CFExpression>
 	public CFExpression visitLambdaDeclaration(LambdaDeclarationContext ctx) {
 		CFFuncDeclStatement funcDeclStatement = (CFFuncDeclStatement) getCFScriptStatementVisitor()
 				.visitLambdaDeclaration(ctx);
-		return new CFAnonymousFunctionExpression(ctx.LAMBDAOP().getSymbol(), funcDeclStatement, true);
+		return new CFAnonymousFunctionExpression(ctx.operator, funcDeclStatement, true);
 	}
 	
 	public synchronized CFScriptStatementVisitor getCFScriptStatementVisitor() {

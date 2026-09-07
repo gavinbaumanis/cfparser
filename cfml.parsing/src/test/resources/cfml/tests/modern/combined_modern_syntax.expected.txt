@@ -739,10 +739,6 @@ Hidden:NEWLINE                  <>
 /*===DECOMPILE===*/
 component {
   {
-    public function declOk(required flag, required name)       {
-        return CompName.runStatic(true, 'x');
-
-      };
     public function test()       {
 rows = [];
 rptdetails = {'heading':'iPOS','data':seq.Map(rows, (row) => {
@@ -764,6 +760,10 @@ loop collection=row.subscores index='k' item='v'{
   return false;
 
 });
+
+      };
+    public function declOk(required flag, required name)       {
+        return CompName::runStatic(true, 'x');
 
       };
 

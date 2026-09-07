@@ -680,7 +680,7 @@ loop collection=row.subscores index='k' item='v'{
   return false;
 
 });
-ok = CompName.runStatic(true, 'x');
+ok = CompName::runStatic(true, 'x');
 
 }
 /*======*/

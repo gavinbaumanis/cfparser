@@ -194,16 +194,16 @@ Hidden:NEWLINE                  <>
 /*===DECOMPILE===*/
 component {
   {
-    public function callTrailing()       {
-        return declOk(true, 'x');
-
-      };
     public function declOk(required flag, required name)       {
         return true;
 
       };
+    public function callTrailing()       {
+        return declOk(true, 'x');
+
+      };
     public function staticCall()       {
-        return CompName.runStatic();
+        return CompName::runStatic();
 
       };
 

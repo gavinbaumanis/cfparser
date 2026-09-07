@@ -51,7 +51,8 @@ public class CFAnonymousFunctionExpression extends CFExpression {
 				}
 			}
 		}
-		sb.append(") => ");
+		String arrow = getToken() == null ? "=>" : getToken().getText();
+		sb.append(") ").append(arrow).append(" ");
 		if (funcDeclStatement.getBody() != null) {
 			sb.append(funcDeclStatement.getBody().Decompile(0));
 		}
@@ -60,6 +61,14 @@ public class CFAnonymousFunctionExpression extends CFExpression {
 
 	public boolean isLambda() {
 		return lambda;
+	}
+
+	/**
+	 * True for <code>=&gt;</code>, which Lucee evaluates as a closure over the enclosing scope, as
+	 * against <code>-&gt;</code>, which does not capture it.
+	 */
+	public boolean isClosure() {
+		return lambda && (getToken() == null || "=>".equals(getToken().getText()));
 	}
 
 	public CFFuncDeclStatement getFunctionDeclaration() {
